@@ -1,7 +1,7 @@
 ---
-layout: default
 title: Home
 ---
 
-# Hello, Jekyll!
-This is my first super simple Jekyll site.
+# Welcome to My Docs Site
+
+This site uses the **Just the Docs** theme!
