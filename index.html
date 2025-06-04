@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JStress</title>
+
+  <script>
+
+    var server_flag;
+    window.onload = function () {
+      if (location.protocol === 'file:') {
+        server_flag = false;
+      } else {
+        // Behavior for server (likely using XAMPP)
+        server_flag = true;
+      }
+    };
+  </script>
+
+  <link href="code/CSS/roundslider.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="code/CSS/main.css">
+</head>
+
+<body>
+  <!-- <script src="scripts/jquery-1.11.3.min.js"></script> -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"> </script>
+  <script type="text/javascript" src="code/JS/LaTexMathML.js"> </script>
+  <script type="text/javascript" src="code/JS/echarts.js"> </script>
+  <!-- <script type="text/javascript" src="code/JS/main.js"> </script> -->
+  <script src="code/JS/roundslider.min.js"></script>
+  <script src="code/JS/math.min.js"></script>
+
+
+  <div id="app">
+    <!-- TODO when you touch the rotate button the vectors dont update as they should -->
+    <div id="app_title">
+      laserbeamFoam - Workbench v1.0.0
+    </div>
+
+
+    <div id="container">
+
+      <div id="settings_tab">
+        <!-- <div id="settings"></div> -->
+        <!-- <div id="cube"></div> -->
+        <!-- <div id="laser_position_window"></div> -->
+      </div>
+
+      <div id="displays">
+        <div id="powder_bed"></div>
+        <div id="laser_position_window"></div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <script type="importmap">
+{
+    "imports": {
+        "three": "https://threejs.org/build/three.module.js",
+        "three/addons/": "https://threejs.org/examples/jsm/"
+    }
+}</script>
+
+  <script type="module">
+
+    import *as THREE from "three"
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    // Set up the scene
+    const scene1 = new THREE.Scene();
+    const scene2 = new THREE.Scene();
+
+    setUpScene(scene1)
+    setUpScene(scene2)
+
+    // Set up the camera
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(1.5, 3, 0.5);
+
+    import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+    // Set up the renderer and attach it to the document
+    const renderer1 = new THREE.WebGLRenderer({ antialias: true });
+    const renderer2 = new THREE.WebGLRenderer({ antialias: true });
+    renderer1.setSize(678, 415);
+    renderer2.setSize(678, 415);
+
+    document.getElementById("laser_position_window").appendChild(renderer1.domElement);
+    document.getElementById("powder_bed").appendChild(renderer2.domElement);
+
+    $(renderer1.domElement).attr("id", "laser_position_window_renderer_dom");
+    $(renderer2.domElement).attr("id", "powder_bed_renderer_dom");
+
+    const controls1 = new OrbitControls(camera, renderer1.domElement);
+    const controls2 = new OrbitControls(camera, renderer2.domElement);
+    
+    camera.lookAt(0, -1, -2); // Look at the center of the scene
+    controls1.target.set(0, -1, -2); // Set the controls' target to match
+    controls2.target.set(0, -1, -2); // Set the controls' target to match
+    controls1.update(); // Apply the target so OrbitControls uses it
+    controls2.update(); // Apply the target so OrbitControls uses it
+
+    // Enable camera panning (move x/y/z) on middle mouse button
+    controls1.enablePan = true;
+    controls2.enablePan = true;
+
+    
+    controls1.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
+    controls2.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
+
+
+    // // Listen for the start and end of panning with the middle mouse button
+    // let isMiddlePanning = false;
+
+    // renderer2.domElement.addEventListener('mousedown', function (event) {
+    //   if (event.button === 1) { // Middle mouse button
+    //     isMiddlePanning = true;
+    //   }
+    // });
+
+    //   renderer1.domElement.addEventListener('mousedown', function (event) {
+    //   if (event.button === 1) { // Middle mouse button
+    //     isMiddlePanning = true;
+    //   }
+    // });
+
+    // renderer1.domElement.addEventListener('mouseup', function (event) {
+    //   if (event.button === 1) {
+    //     isMiddlePanning = false;
+    //   }
+    // });
+    //    renderer2.domElement.addEventListener('mouseup', function (event) {
+    //   if (event.button === 1) {
+    //     isMiddlePanning = false;
+    //   }
+    // });
+
+
+    $(document).ready(function () {
+
+      // Enable shadow mapping in the renderer
+      renderer1.shadowMap.enabled = true;
+      renderer2.shadowMap.enabled = true;
+      renderer1.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer2.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      // Create an STL loader
+      const loader1 = new STLLoader();
+      const loader2 = new STLLoader();
+
+      // Load and display the STL file in the same canvas
+      loader1.load('geometry/single_track_melted.stl', function (geometry) {
+        // Create a material for the mesh
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true });
+        // Create a mesh from the geometry and material
+        const mesh = new THREE.Mesh(geometry, material);
+        // Optionally scale or position the mesh
+        mesh.position.set(0, 0, 0);
+        mesh.rotation.x = -Math.PI / 2;
+        // mesh.rotation.z = Math.PI / 2;
+        // mesh.rotation.y = -Math.PI / 10;
+        mesh.scale.set(4000, 4000, 4000);
+        // Add the mesh to the scene
+        scene1.add(mesh);
+        // Optionally, store mesh reference for later use
+        animate(); // Start animation after STL is loaded if needed
+      });
+
+            // Load and display the STL file in the same canvas
+      loader2.load('geometry/single_track_not_melted.stl', function (geometry) {
+        // Create a material for the mesh
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true });
+        // Create a mesh from the geometry and material
+        const mesh = new THREE.Mesh(geometry, material);
+        // Optionally scale or position the mesh
+        mesh.position.set(0, 0, 0);
+        mesh.rotation.x = -Math.PI / 2;
+        // mesh.rotation.z = Math.PI / 2;
+        // mesh.rotation.y = -Math.PI / 10;
+        mesh.scale.set(4000, 4000, 4000);
+        // Add the mesh to the scene
+        scene2.add(mesh);
+        // Optionally, store mesh reference for later use
+        animate(); // Start animation after STL is loaded if needed
+      });
+
+
+    });
+
+    // ############################################  Functions   ######################################################
+    // Animation loop
+
+
+    function setUpScene(scene){
+
+      // Add a small sphere at the origin to show the origin point
+      const originGeometry = new THREE.SphereGeometry(0.08, 32, 32);
+      const originMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const originSphere = new THREE.Mesh(originGeometry, originMaterial);
+      originSphere.position.set(0, 0, 0);
+      // Flip the y and z axes of the origin
+      scene.add(originSphere);
+
+    // Add axes helper to show the axes
+    const axesHelper = new THREE.AxesHelper(1.5); // length of axes
+
+    // X label (red)
+    const xLabel = createAxisLabel('X', '#ff0000', new THREE.Vector3(1.7, 0, 0));
+    // Y label (green)
+    const yLabel = createAxisLabel('Y', '#00ff00', new THREE.Vector3(0, 1.7, 0));
+    // Z label (blue)
+    const zLabel = createAxisLabel('Z', '#0000ff', new THREE.Vector3(0, 0, 1.7));
+    scene.add(xLabel);
+    scene.add(yLabel);
+    scene.add(zLabel);
+    scene.add(axesHelper);
+
+  // Set the background to a solid color (e.g., white)
+    scene.background = new THREE.Color("rgb(255, 255, 255)");
+
+        // Add a grid helper to the scene
+    const gridHelper = new THREE.GridHelper(10, 20, 0x888888, 0xcccccc);
+    gridHelper.position.y = -0.5; // Align with shadow plane
+    scene.add(gridHelper);  
+
+      // Add ambient light for general illumination
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); // Lower intensity for more dramatic shadows
+      scene.add(ambientLight);
+
+        // Add a large plane to receive shadows
+      const shadowPlaneGeometry = new THREE.PlaneGeometry(20, 20);
+      const shadowPlaneMaterial = new THREE.ShadowMaterial({ opacity: 0.3 });
+      const shadowPlane = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
+      shadowPlane.rotation.x = -Math.PI / 2;
+      shadowPlane.position.y = -0.5;
+      shadowPlane.receiveShadow = true;
+      scene.add(shadowPlane);
+
+            // Add a strong directional light that casts big shadows
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+      directionalLight.position.set(5, 10, 7.5);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 2048; // High-res shadow map
+      directionalLight.shadow.mapSize.height = 2048;
+      directionalLight.shadow.camera.near = 1;
+      directionalLight.shadow.camera.far = 50;
+      directionalLight.shadow.camera.left = -10;
+      directionalLight.shadow.camera.right = 10;
+      directionalLight.shadow.camera.top = 10;
+      directionalLight.shadow.camera.bottom = -10;
+      scene.add(directionalLight);
+
+    }
+
+    // Add axis labels (X, Y, Z)
+    function createAxisLabel(text, color, position) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.font = '36px Courier';
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(0.4, 0.2, 1);
+      sprite.position.copy(position);
+      return sprite;
+    }
+
+
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer1.render(scene1, camera);
+      renderer2.render(scene2, camera);
+    }
+
+  </script>
+
+</body>
+
+</html>
