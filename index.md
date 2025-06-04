@@ -6,4 +6,4 @@ title: Home
 
 This site uses the **Just the Docs** theme!
 
-please visit [our website for the app](index.html)
+please visit [our website for the app](app.html)
